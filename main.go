@@ -131,6 +131,11 @@ func loadConfigs(mode string) {
 			configs = append(configs, Config{proxies[i], uas[i], ""})
 		}
 	}
+
+	fmt.Printf("[DEBUG] Loaded configurations:\n")
+	for _, config := range configs {
+		fmt.Printf("[DEBUG] Proxy: %s, UA: %s, Cookie: %s\n", config.Proxy, config.UA, config.Cookie)
+	}
 }
 
 func createClient(cfg Config, ver int) *http.Client {
@@ -192,7 +197,6 @@ func sendRequest(args Args) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		// Log request failure
 		fmt.Printf("[ERROR] Request failed: %v\n", err)
 		return
 	}
