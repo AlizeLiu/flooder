@@ -145,7 +145,10 @@ func createClient(cfg Config, ver int) *http.Client {
 	}
 
 	if ver == 2 || (ver == 3 && rand.Intn(2) == 0) {
-		http2.ConfigureTransport(transport)
+		err := http2.ConfigureTransport(transport)
+		if err != nil {
+			return nil
+		}
 	}
 
 	return &http.Client{
@@ -172,17 +175,32 @@ func sendRequest(args Args) {
 	cfg := configs[rand.Intn(len(configs))]
 	client := createClient(cfg, args.httpVer)
 
-	req, _ := http.NewRequest(args.method, args.url, nil)
+	fmt.Printf("[DEBUG] Using config: Proxy=%s, UA=%s\n", cfg.Proxy, cfg.UA)
+
+	req, err := http.NewRequest(args.method, args.url, nil)
+	if err != nil {
+		fmt.Printf("[ERROR] Failed to create request: %v\n", err)
+		return
+	}
+
 	req.Header.Set("User-Agent", cfg.UA)
 	if cfg.Cookie != "" {
 		req.Header.Set("Cookie", cfg.Cookie)
 	}
 
+	fmt.Printf("[DEBUG] Sending request: Method=%s, URL=%s\n", args.method, args.url)
+
 	resp, err := client.Do(req)
-	if err == nil {
-		atomic.StoreInt32(&stats.LastCode, int32(resp.StatusCode))
-		resp.Body.Close()
+	if err != nil {
+		// Log request failure
+		fmt.Printf("[ERROR] Request failed: %v\n", err)
+		return
 	}
+
+	fmt.Printf("[DEBUG] Received response: StatusCode=%d\n", resp.StatusCode)
+
+	atomic.StoreInt32(&stats.LastCode, int32(resp.StatusCode))
+	resp.Body.Close()
 	atomic.AddUint64(&stats.Total, 1)
 }
 
@@ -200,6 +218,7 @@ func printHeader(args Args) {
 
 func showStats(url string) {
 	fmt.Printf("\033[2J\033[H")
+	fmt.Printf("Target: %s\n", url)
 	fmt.Printf("%s[STATUS] - {%d - %d}%s\n",
 		ColorYellow,
 		atomic.LoadInt32(&stats.LastCode),
