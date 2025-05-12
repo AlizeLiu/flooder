@@ -69,7 +69,7 @@ type Args struct {
 
 func parseArgs() Args {
 	if len(os.Args) < 7 {
-		fmt.Printf("用法: %s <method> <url> <duration> <rate> <threads> [--http <1|2|3>] <mode>\n", os.Args[0])
+		fmt.Printf("用法: %s <method> <url> <duration> <rate> <threads> --http <1|2|3> <mode>\n", os.Args[0])
 		os.Exit(1)
 	}
 
@@ -208,7 +208,6 @@ func sendRequest(args Args) {
 	atomic.AddUint64(&stats.Total, 1)
 }
 
-// 辅助函数
 func readLines(file string) []string {
 	content, _ := os.ReadFile(file)
 	return strings.Split(strings.TrimSpace(string(content)), "\n")
